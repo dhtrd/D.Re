@@ -234,8 +234,20 @@
     body{background:#fff}
     .wrap,.overlay{display:none!important}
     #receipt{display:block!important;width:72mm;margin:0 auto;padding:4mm 2mm 8mm;box-shadow:none;border-radius:0}
-    #receipt.rcpt{font-size:11.5px}
+    #receipt.rcpt{font-size:14.5px;line-height:1.55}
     #receipt *{color:#000!important}
+    #receipt .rc-title{font-size:21px}
+    #receipt .rc-sub{font-size:13px}
+    #receipt .rc-big{font-size:15.5px}
+    #receipt .rc-row{padding:2.5px 0}
+    #receipt .rc-row .k{font-size:14px}
+    #receipt .rc-row .v{font-size:14px}
+    #receipt .rc-row.big .k,#receipt .rc-row.big .v{font-size:17px}
+    #receipt .rc-final .fl{font-size:13px}
+    #receipt .rc-final .fv{font-size:30px}
+    #receipt .rc-note{font-size:12.5px}
+    #receipt .rc-sign{font-size:13px}
+    #receipt .rc-foot{font-size:12px}
   }
 </style>
 </head>
@@ -637,7 +649,8 @@
     if(d.notes)s+='<hr class="rc-hr"><div class="rc-note"><b>ملاحظات:</b> '+esc(d.notes)+'</div>';
     s+='<div class="rc-final"><div class="fl">النقد المتوقع</div><div class="fv">'+money(d.expected)+' ر.س</div></div>';
     s+='<div class="rc-sign"><div class="box"><div class="space"></div><div class="ln"><span class="who">المُسلِّم</span><br><small>'+esc(d.cashier||'')+'</small></div></div><div class="box"><div class="space"></div><div class="ln"><span class="who">المُستلِم</span><br><small>'+esc(d.receiver||'')+'</small></div></div></div>';
-    var pt=new Date();s+='<div class="rc-foot">طُبع في '+pt.toLocaleString('en-GB',{hour12:false}).replace(',','')+(d.handover?' • تسليم '+t12disp(d.handover):'')+'</div>';
+    var ed=d.editedAt,sv=d.savedAt,when=ed||sv||Date.now();var lbl=ed?'عُدّل وطُبع في':(sv?'حُفظ وطُبع في':'طُبع في');
+    s+='<div class="rc-foot">'+lbl+' '+new Date(when).toLocaleString('en-GB',{hour12:false}).replace(',','')+(d.handover?' • تسليم '+t12disp(d.handover):'')+'</div>';
     return s;
   }
   function doPrint(d){$('#receipt').innerHTML=buildReport(d);window.print()}
@@ -678,11 +691,12 @@
   $('#printBtn').addEventListener('click',function(){recalc();
     if(!last.totalSales&&!last.counted){showAlert('الرجاء إدخال بيانات الوردية أولاً قبل الحفظ والطباعة.');return}
     if(last.cashier)cashierCombo.add(last.cashier);if(last.receiver)receiverCombo.add(last.receiver);
-    var h=loadHist();
-    if(editingId){var i=-1;h.forEach(function(r,ix){if(r.savedAt===editingId)i=ix});if(i>-1)h[i]=Object.assign({},last,{savedAt:editingId,editedAt:Date.now()});else h.unshift(Object.assign({savedAt:Date.now()},last))}
-    else h.unshift(Object.assign({savedAt:Date.now()},last));
-    saveHist(h);renderHist();runAutoBackup();doPrint(last);
-    var bn=last.brand,cn=last.cashier;resetForm();
+    var now=Date.now(),h=loadHist(),rec;
+    if(editingId){var i=-1;h.forEach(function(r,ix){if(r.savedAt===editingId)i=ix});
+      if(i>-1){rec=Object.assign({},last,{savedAt:editingId,editedAt:now});h[i]=rec}else{rec=Object.assign({savedAt:now},last);h.unshift(rec)}}
+    else{rec=Object.assign({savedAt:now},last);h.unshift(rec)}
+    saveHist(h);renderHist();runAutoBackup();doPrint(rec);
+    var bn=rec.brand,cn=rec.cashier;resetForm();
     setTimeout(function(){sessionReminder(bn,cn)},400);
   });
   function renderHist(){var h=loadHist(),box=$('#historyBox');
